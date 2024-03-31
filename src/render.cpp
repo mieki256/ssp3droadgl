@@ -1,4 +1,4 @@
-// Last updated: <2024/04/01 03:52:14 +0900>
+// Last updated: <2024/04/01 06:10:10 +0900>
 //
 // Update objs and draw objs by OpenGL
 
@@ -472,7 +472,7 @@ void Render(void)
     gw.delta = countFps();
     update(gw.delta);
     draw_gl();
-    glFinish();
+    // glFinish();
 }
 
 // setup animation

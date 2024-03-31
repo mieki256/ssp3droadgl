@@ -20,6 +20,8 @@ Screenshots
 ![04night_thumb.png](./screenshots/04night_thumb.png)
 [04night.png](./screensots/04night.png)
 
+[Movie (YouTube)](https://youtu.be/yN2tBqr5mf0?si=fpiq0YwlXMFVETTD)
+
 Install
 -------
 
@@ -74,6 +76,7 @@ Build ssp3droadgl.scr
 
 ```
 cd src
+make clean
 make
 ```
 
@@ -81,6 +84,7 @@ Build ssp3droadglfw.exe
 
 ```
 cd src
+make -f Makefile.glfw clean
 make -f Makefile.glfw
 ```
 
