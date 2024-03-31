@@ -1,0 +1,41 @@
+/* resource.rc */
+
+#include <windows.h>
+#include <scrnsave.h>
+#include "resource.h"
+
+#define IDC_STATIC_ICON     2300
+#define IDC_STATIC_TEXT     2301
+
+/* LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US */
+
+/* Screensaver title */
+STRINGTABLE PRELOAD DISCARDABLE
+BEGIN
+  IDS_DESCRIPTION       "P3D Road GL"
+  idsAppName            "P3D Road GL"
+  idsIniFile            "ssp3droadgl.ini"
+END
+
+/* Icon */
+ID_APP  ICON    "icon.ico"
+
+/* Dialog */
+DLG_SCRNSAVECONFIGURE DIALOG DISCARDABLE  0, 0, 200, 110
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Pseudo 3d road GL setting"
+FONT 11, "Segoe UI"
+BEGIN
+  DEFPUSHBUTTON "&OK",     IDOK,      85,  90, 50, 14 
+  PUSHBUTTON    "&Cancel", IDCANCEL,  140, 90, 50, 14
+  CTEXT "Pseudo 3d road GL setting", IDC_STATIC_TEXT, 45, 5, 100, 14
+  LTEXT "Wait (5 - 200 msec)", IDC_STATIC_TEXT, 10, 20, 70, 14
+  EDITTEXT IDC_WAITVALUE, 90, 20, 60, 16, ES_AUTOHSCROLL | ES_NUMBER
+  AUTOCHECKBOX "Draw tree",   IDC_DRAWTREE,   15, 40, 60, 14
+  AUTOCHECKBOX "Draw BG",     IDC_DRAWBG,     80, 40, 60, 14
+  AUTOCHECKBOX "Draw slope",  IDC_DRAWSLOPE,  15, 55, 60, 14
+  AUTOCHECKBOX "Draw beam",   IDC_DRAWBEAM,   80, 55, 60, 14
+  AUTOCHECKBOX "FPS display", IDC_FPSDISPLAY, 15, 70, 60, 14
+  AUTOCHECKBOX "GL Err chk",  IDC_GLERRCHK,   80, 70, 60, 14
+  PUSHBUTTON    "Reset",   IDC_RESET, 10,  90, 50, 14
+END
