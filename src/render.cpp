@@ -1,4 +1,4 @@
-// Last updated: <2024/04/01 06:10:10 +0900>
+// Last updated: <2024/04/02 04:49:13 +0900>
 //
 // Update objs and draw objs by OpenGL
 
@@ -432,6 +432,8 @@ typedef struct gwk
     int count_fps;
 
     int use_waittime;
+    int init_fg;
+    int counter;
 } GWK;
 
 // reserve global work
@@ -446,14 +448,20 @@ void init_work_first(int Width, int Height);
 void init_work(void);
 void init_course_random(void);
 void init_course_debug(void);
+void count_seg_number(void);
 void expand_segdata(void);
 void set_billboard(BBTYPE bbkind, int j, SPRTYPE *spr_kind, float *spr_x, float *spr_scale);
-void load_image(void);
+void load_image(int kind);
 void update(float delta);
 void update_bg_pos(float delta, float curve, float pitch);
 void update_cars(float delta);
+float get_screen_h_3d(float z);
+float get_screen_w_3d(float z);
+void get_screen_wh_3d(float z, float *w, float *h);
 void init_gl(void);
+void clear_screen(void);
 void draw_gl(void);
+void draw_text(const char *buf, float x, float y, float sdw, int kind);
 void draw_fps(void);
 void draw_error_msg(void);
 void draw_bg(void);
@@ -480,7 +488,6 @@ void SetupAnimation(int Width, int Height)
 {
     init_work_first(Width, Height);
     init_gl();
-    load_image();
     initCountFps();
 }
 
@@ -640,7 +647,6 @@ void init_work_first(int Width, int Height)
     gw.tex_load_error = 0;
     gw.use_waittime = 0;
 
-    gw.step = 0;
     gw.camera_z = 0.0;
 
 #if ACCEL
@@ -654,11 +660,13 @@ void init_work_first(int Width, int Height)
     gw.bg_x = 0.0;
     gw.bg_y = 0.0;
     gw.angle = 0.0;
+
+    gw.step = 0;
+    gw.init_fg = 0;
 }
 
 void init_work(void)
 {
-    gw.step = 0;
     gw.camera_z = 0.0;
 
 #if ACCEL
@@ -668,7 +676,7 @@ void init_work(void)
 #endif
 
     gw.laps = 0;
-    gw.fadev = 0.0;
+    gw.fadev = 1.0;
     gw.bg_x = 0.0;
     gw.bg_y = 0.0;
     gw.angle = 0.0;
@@ -682,18 +690,6 @@ void init_work(void)
         gw.cars[i].z = 0.0;
         gw.cars[i].sprkind = SPR_CAR0_0;
     }
-
-    // init_course_debug();
-    init_course_random();
-
-    // count segment number
-    gw.seg_max = 0;
-    for (int i = 0; i < gw.segdata_src_len; i++)
-        gw.seg_max += gw.segdata_src[i].cnt;
-
-    gw.seg_total_length = gw.seg_length * gw.seg_max;
-
-    expand_segdata();
 }
 
 // ----------------------------------------
@@ -857,6 +853,15 @@ void init_course_debug(void)
         gw.segdata_src[i].pitch = segdata_src_dbg[i].pitch;
         gw.segdata_src[i].bb = segdata_src_dbg[i].bb;
     }
+}
+
+void count_seg_number(void)
+{
+    gw.seg_max = 0;
+    for (int i = 0; i < gw.segdata_src_len; i++)
+        gw.seg_max += gw.segdata_src[i].cnt;
+
+    gw.seg_total_length = gw.seg_length * gw.seg_max;
 }
 
 void expand_segdata(void)
@@ -1102,14 +1107,41 @@ void update(float delta)
     switch (gw.step)
     {
     case 0:
-        // init work
+        gw.step++;
+        return;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        if (gw.init_fg == 0)
+            load_image(gw.step - 1);
+        gw.step++;
+        return;
+    case 6:
+        gw.init_fg = 1;
+        gw.counter = 0;
+        gw.step++;
+        return;
+    case 7:
+        gw.counter++;
+        if (gw.counter >= (int)(gw.framerate * 0.5))
+        {
+            gw.step++;
+        }
+        return;
+    case 8:
         init_work();
+        // init_course_debug();
+        init_course_random();
+        count_seg_number();
+        expand_segdata();
         delta = 1.0 / gw.framerate;
         gw.fadev = 1.0;
         gw.laps = 0;
         gw.step++;
         break;
-    case 1:
+    case 9:
         // fadein
         gw.fadev -= ((1.0 / (gw.framerate * 1.3)) * gw.framerate * delta);
         if (gw.fadev <= 0.0)
@@ -1118,7 +1150,7 @@ void update(float delta)
             gw.step++;
         }
         break;
-    case 2:
+    case 10:
         // main job
         if (gw.laps >= gw.laps_limit)
         {
@@ -1126,14 +1158,14 @@ void update(float delta)
             gw.step++;
         }
         break;
-    case 3:
+    case 11:
         // fadeout
         gw.fadev += ((1.0 / (gw.framerate * 2.0)) * gw.framerate * delta);
         if (gw.fadev >= 1.0)
         {
+            gw.step = 8;
             gw.fadev = 1.0;
             gw.laps = 0;
-            gw.step = 0;
             gw.stage_num = static_cast<STAGETYPE>((static_cast<int>(gw.stage_num) + 1) % 4);
         }
         break;
@@ -1327,28 +1359,58 @@ void init_gl(void)
     // glShadeModel(GL_SMOOTH);
 
     glClearDepth(1.0);
+
+    glClearColor(0.2, 0.4, 0.8, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     chkErrGL();
 }
 
-void draw_gl(void)
+void clear_screen(void)
 {
-    // clear screen
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     chkErrGL();
+}
 
-    draw_bg();
+static const char *loadmsg[8] = {
+    "Now Loading ",
+    "Now Loading .",
+    "Now Loading ..",
+    "Now Loading ...",
+    "Now Loading ....",
+    "Now Loading .....",
+    "Now Loading ......",
+    "Now Loading ...... OK",
+};
 
-    glLoadIdentity();
-    glTranslatef(0, 0, 0);
+void draw_gl(void)
+{
+    clear_screen();
 
-    chkErrGL();
-    draw_road();
-
-    if (gw.fadev > 0.0)
+    if (gw.step > 8)
+    {
+        if (gw.fadev < 1.0)
+        {
+            draw_bg();
+            glLoadIdentity();
+            glTranslatef(0, 0, 0);
+            chkErrGL();
+            draw_road();
+        }
         draw_fadeout(gw.fadev);
+    }
+    else
+    {
+        if (gw.step < 8)
+        {
+            float x, y;
+            x = -get_screen_w_3d(gw.znear) * 0.95;
+            y = -get_screen_h_3d(gw.znear) * 0.9;
+            draw_text(loadmsg[gw.step], x, y, 0.04, GL_FONT_SHNM8x16R);
+        }
+    }
 
-    // draw fps
     if (fps_display != 0)
         draw_fps();
 
@@ -1356,18 +1418,37 @@ void draw_gl(void)
     draw_error_msg();
 }
 
+float get_screen_h_3d(float z)
+{
+    return z * tan(deg2rad(gw.fovy / 2.0));
+}
+
+float get_screen_w_3d(float z)
+{
+    return get_screen_h_3d(z) * (float)gw.scrw / (float)gw.scrh;
+}
+
+void get_screen_wh_3d(float z, float *w, float *h)
+{
+    float lw, lh;
+    lh = z * tan(deg2rad(gw.fovy / 2.0));
+    lw = lh * (float)gw.scrw / (float)gw.scrh;
+    *w = lw;
+    *h = lh;
+}
+
 void draw_text(const char *buf, float x, float y, float sdw, int kind)
 {
     // shadow
     glColor4f(0, 0, 0, 1);
-    glRasterPos3d(x + sdw, y - sdw, -gw.znear);
-    glBitmapFontDrawString(buf, GL_FONT_PROFONT);
+    glRasterPos3f(x + sdw, y - sdw, -gw.znear);
+    glBitmapFontDrawString(buf, kind);
     chkErrGL();
 
     // text
     glColor4f(1, 1, 1, 1);
-    glRasterPos3d(x, y, -gw.znear);
-    glBitmapFontDrawString(buf, GL_FONT_PROFONT);
+    glRasterPos3f(x, y, -gw.znear);
+    glBitmapFontDrawString(buf, kind);
     chkErrGL();
 }
 
@@ -1376,11 +1457,12 @@ void draw_fps(void)
     char buf[512];
     sprintf(buf, "FPS %d/%d", gw.count_fps, (int)gw.cfg_framerate);
 
-    // glRasterPos3f(-0.1, 1.0, -1.08); // set postion
-
-    float sdw = 0.04;
-    float x = -1.5;
-    float y = 12.0;
+    float x, y, sdw;
+    x = -get_screen_w_3d(gw.znear) * 0.05;
+    y = get_screen_h_3d(gw.znear) * 0.9;
+    // x = -1.5;
+    // y = 12.0;
+    sdw = 0.04;
     draw_text(buf, x, y, sdw, GL_FONT_PROFONT);
 }
 
@@ -1427,8 +1509,7 @@ void draw_bg(void)
     float z, w, h, uw, vh, u, v;
 
     z = gw.seg_length * (VIEW_DIST + 2);
-    h = z * tan(deg2rad(gw.fovy / 2.0));
-    w = h * (float)gw.scrw / (float)gw.scrh;
+    get_screen_wh_3d(z, &w, &h);
 
     uw = 0.5;
     vh = 0.5;
@@ -1674,13 +1755,12 @@ void draw_road(void)
 
 void draw_fadeout(float a)
 {
-    float z, w, h;
-    z = gw.znear;
-    h = z * tan(deg2rad(gw.fovy / 2.0));
-    w = h * (float)gw.scrw / (float)gw.scrh;
-
     if (a <= 0.0)
         return;
+
+    float z, w, h;
+    z = gw.znear;
+    get_screen_wh_3d(z, &w, &h);
 
     glDisable(GL_TEXTURE_2D);
 
@@ -1688,13 +1768,14 @@ void draw_fadeout(float a)
     {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor4f(0.0, 0.0, 0.0, a);
     }
     else
     {
+        a = 1.0;
         glDisable(GL_BLEND);
-        glColor4f(0.0, 0.0, 0.0, 1.0);
     }
+
+    glColor4f(0.0, 0.0, 0.0, a);
 
     glBegin(GL_QUADS);
     glVertex3f(-w, h, -z);
@@ -1703,6 +1784,7 @@ void draw_fadeout(float a)
     glVertex3f(+w, h, -z);
     glEnd();
     chkErrGL();
+
     glDisable(GL_BLEND);
 }
 
@@ -1811,66 +1893,70 @@ GLuint createTextureFromMemory(const unsigned char *_pngData, int _pngLen)
     return texture;
 }
 
-void load_image(void)
+#ifdef __MINGW64__
+// MSYS2 MINGW64 gcc
+static const unsigned char *bgimg_start_tbl[4] = {
+    _binary_bg_summer_jpg_start,
+    _binary_bg_autumn_jpg_start,
+    _binary_bg_winter_jpg_start,
+    _binary_bg_night_jpg_start,
+};
+
+static size_t bgimg_size_tbl[4] = {
+    (size_t)_binary_bg_summer_jpg_size,
+    (size_t)_binary_bg_autumn_jpg_size,
+    (size_t)_binary_bg_winter_jpg_size,
+    (size_t)_binary_bg_night_jpg_size,
+};
+#else
+// MinGW gcc
+static const unsigned char *bgimg_start_tbl[4] = {
+    binary_bg_summer_jpg_start,
+    binary_bg_autumn_jpg_start,
+    binary_bg_winter_jpg_start,
+    binary_bg_night_jpg_start,
+};
+
+static size_t bgimg_size_tbl[4] = {
+    (size_t)binary_bg_summer_jpg_size,
+    (size_t)binary_bg_autumn_jpg_size,
+    (size_t)binary_bg_winter_jpg_size,
+    (size_t)binary_bg_night_jpg_size,
+};
+#endif
+
+void load_image(int kind)
 {
     const unsigned char *img_ptr;
     size_t img_size;
 
+    if (kind == 0)
+    {
+
 #ifdef __MINGW64__
-    // MSYS2 MINGW64 gcc
-    const unsigned char *bgimg_start_tbl[4] = {
-        _binary_bg_summer_jpg_start,
-        _binary_bg_autumn_jpg_start,
-        _binary_bg_winter_jpg_start,
-        _binary_bg_night_jpg_start,
-    };
-
-    size_t bgimg_size_tbl[4] = {
-        (size_t)_binary_bg_summer_jpg_size,
-        (size_t)_binary_bg_autumn_jpg_size,
-        (size_t)_binary_bg_winter_jpg_size,
-        (size_t)_binary_bg_night_jpg_size,
-    };
-
-    img_ptr = _binary_sprites_png_start;         // start address
-    img_size = (size_t)_binary_sprites_png_size; // size
+        img_ptr = _binary_sprites_png_start;         // start address
+        img_size = (size_t)_binary_sprites_png_size; // size
 #else
-    // MinGW gcc
-    const unsigned char *bgimg_start_tbl[4] = {
-        binary_bg_summer_jpg_start,
-        binary_bg_autumn_jpg_start,
-        binary_bg_winter_jpg_start,
-        binary_bg_night_jpg_start,
-    };
-
-    size_t bgimg_size_tbl[4] = {
-        (size_t)binary_bg_summer_jpg_size,
-        (size_t)binary_bg_autumn_jpg_size,
-        (size_t)binary_bg_winter_jpg_size,
-        (size_t)binary_bg_night_jpg_size,
-    };
-
-    img_ptr = binary_sprites_png_start;         // start address
-    img_size = (size_t)binary_sprites_png_size; // size
+        img_ptr = binary_sprites_png_start;         // start address
+        img_size = (size_t)binary_sprites_png_size; // size
 #endif
-    gw.spr_tex = createTextureFromMemory(img_ptr, img_size);
 
-    if (gw.spr_tex > 0)
-    {
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, gw.spr_tex);
+        gw.spr_tex = createTextureFromMemory(img_ptr, img_size);
+        if (gw.spr_tex > 0)
+        {
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, gw.spr_tex);
+        }
+        else
+            gw.tex_load_error |= (1 << 4);
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
     }
-    else
+    else if (kind <= 4)
     {
-        gw.tex_load_error |= (1 << 4);
-    }
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
-
-    if (enableDrawBg != 0)
-    {
-        for (int i = 0; i < 4; i++)
+        int i = kind - 1;
+        if (enableDrawBg != 0)
         {
             img_ptr = bgimg_start_tbl[i];
             img_size = bgimg_size_tbl[i];
@@ -1881,15 +1967,12 @@ void load_image(void)
                 glBindTexture(GL_TEXTURE_2D, gw.bg_tex[i]);
             }
             else
-            {
                 gw.tex_load_error |= (1 << i);
-            }
         }
-    }
-    else
-    {
-        for (int i = 0; i < 4; i++)
+        else
+        {
             gw.bg_tex[i] = 0;
+        }
     }
 }
 
@@ -1928,7 +2011,7 @@ void chkErrGL(void)
                 break;
             }
         }
-        
+
         if (fg == 0)
         {
             char buf[512];

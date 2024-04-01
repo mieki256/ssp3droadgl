@@ -1,4 +1,4 @@
-// Last updated: <2024/04/01 03:51:17 +0900>
+// Last updated: <2024/04/01 20:43:14 +0900>
 //
 // pseudo 3d road screen saver by OpenGL
 //
@@ -98,10 +98,12 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
     // break;
 
   case WM_TIMER:
+    // main loop
     if (running == 0)
     {
       running = 1;
       Render(); // animate
+
       if (hDC != NULL)
       {
         SwapBuffers(hDC);
@@ -110,6 +112,7 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
       {
         MessageBox(NULL, TEXT("hDC is NULL"), TEXT("Error"), MB_OK);
       }
+
       running = 0;
     }
     return 0;
