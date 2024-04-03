@@ -103,11 +103,25 @@ Reference
 
 [How to Scr: Writing an OpenGL Screensaver for Windows](http://www.cityintherain.com/howtoscr.html)
 
-### Use font
+Resource
+--------
 
-[ProFont for Windows, for Macintosh, for Linux](https://tobiasjung.name/profont/)
+### Fonts
 
-### Use library
+* [ProFont for Windows, for Macintosh, for Linux](https://tobiasjung.name/profont/)
+* [shinonome font family](http://openlab.ring.gr.jp/efont/shinonome/)
+* [Terminus Font Home Page](https://terminus-font.sourceforge.net/)
+* [pet2015 font](http://blawat2015.no-ip.com/~mieki256/diary/202310301.html#202310301)
 
-[nothings/stb: stb single-file public domain libraries for C/C++](https://github.com/nothings/stb)
+### Library
+
+* [nothings/stb: stb single-file public domain libraries for C/C++](https://github.com/nothings/stb)
+
+### Background images
+
+* [Landscape Spring Summer - Free photo on Pixabay - Pixabay](https://pixabay.com/photos/landscape-spring-summer-england-215830/)
+* [Fall Aerial Free Stock CC0 Photo - StockSnap.io](https://stocksnap.io/photo/fall-aerial-ZHYBXNFOB4)
+* [Valley Field Landscape - Free photo on Pixabay - Pixabay](https://pixabay.com/photos/valley-field-landscape-meadow-63564/)
+* [Snow covered mountain during daytime photo – Free Hirzel Image on Unsplash](https://unsplash.com/photos/snow-covered-mountain-during-daytime-lnkaoonau-c)
+* [Luberon Gordes Night - Free photo on Pixabay - Pixabay](https://pixabay.com/photos/luberon-gordes-night-france-city-7084098/)
 
