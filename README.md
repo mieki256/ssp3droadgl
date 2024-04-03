@@ -3,7 +3,7 @@ ssp3droadgl
 
 Screensaver for Windows that draws pseudo 3D roads, implemented in C++ and OpenGL.
 
-Issue. Does not work on some PCs. Cause unknown.
+Issue. Does not work on some PCs. Cause unknown. It will not work if the desktop resolution is 1920x1200, but will work if the desktop resolution is 1920x1080. Why?
 
 Screenshots
 -----------
@@ -67,12 +67,12 @@ C:\Windows\SysWOW64\ssp3droadgl.scr
 Build Requirement / Environment
 -------------------------------
 
+### Build ssp3droadgl.scr
+
 * Windows10 x64 22H2
-* MinGW (gcc 6.3.0)
+* MinGW (g++ 6.3.0)
 * windres 2.28 (in binutils package)
 * ld 2.28 or objcopy 2.28 (in binutils package)
-
-Build ssp3droadgl.scr
 
 ```
 cd src
@@ -80,7 +80,12 @@ make clean
 make
 ```
 
-Build ssp3droadglfw.exe
+### Build ssp3droadglfw.exe
+
+* Windows10 x64 22H2
+* MSYS2 (g++ 13.2.0)
+* ld 2.42
+* GLFW 3.4 (mingw-w64-i686-glfw or mingw-w64-x86_64-glfw)
 
 ```
 cd src
