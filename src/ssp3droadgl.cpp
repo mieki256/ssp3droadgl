@@ -1,4 +1,4 @@
-// Last updated: <2024/04/01 20:43:14 +0900>
+// Last updated: <2024/04/02 21:22:17 +0900>
 //
 // pseudo 3d road screen saver by OpenGL
 //
@@ -38,7 +38,10 @@
 
 static HDC hDC = NULL;
 static HGLRC hRC = NULL;
+static RECT rect;
 static int running = 0;
+static UINT uTimer = 0;
+static int initfg = 0;
 
 // ----------------------------------------
 // prototype declaration
@@ -51,8 +54,6 @@ void SetIntervalGL(int interval);
 LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
                                WPARAM wParam, LPARAM lParam)
 {
-  static RECT rect;
-
   switch (message)
   {
   case WM_CREATE:
@@ -61,62 +62,59 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
     GetClientRect(hWnd, &rect); // get window dimensions
     Width = rect.right - rect.left;
     Height = rect.bottom - rect.top;
+    hDC = NULL;
+    hRC = NULL;
+    uTimer = 0;
+    running = 0;
 
     getConfigFromIniFile(); // get config value from ini file
 
-    hDC = NULL;
-    hRC = NULL;
     if (!InitGL(hWnd, hDC, hRC))
     {
-      return -1;
-      // break;
+      break;
+      // return -1;
     }
 
     SetupAnimation(Width, Height); // initialize work
     SetIntervalGL(1);
 
-    running = 0;
     timeBeginPeriod(1);
-    SetTimer(hWnd, ID_TIMER, waitValue, NULL); // set timer
-
-    return 0;
-    // break;
+    uTimer = SetTimer(hWnd, ID_TIMER, waitValue, NULL); // set timer
+    initfg = 1;
+    break;
+    // return 0;
 
   case WM_DESTROY:
-    KillTimer(hWnd, ID_TIMER);
+    // KillTimer(hWnd, ID_TIMER);
+    KillTimer(hWnd, uTimer);
     timeEndPeriod(1);
     CleanupAnimation(); // cleanup work
     CloseGL(hWnd, hDC, hRC);
-    return 0;
+    break;
+    // return 0;
 
   case WM_ERASEBKGND:
-    return 1;
-    // break;
+    break;
+    // return 1;
 
   case WM_SIZE:
-    return 0;
-    // break;
+    break;
+    // return 0;
 
   case WM_TIMER:
     // main loop
+    if (!initfg)
+      break;
+
     if (running == 0)
     {
       running = 1;
       Render(); // animate
-
-      if (hDC != NULL)
-      {
-        SwapBuffers(hDC);
-      }
-      else
-      {
-        MessageBox(NULL, TEXT("hDC is NULL"), TEXT("Error"), MB_OK);
-      }
-
+      SwapBuffers(hDC);
       running = 0;
     }
-    return 0;
-    // break;
+    break;
+    // return 0;
 
   default:
     break;

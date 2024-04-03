@@ -1,4 +1,4 @@
-// Last updated: <2024/04/02 04:49:13 +0900>
+// Last updated: <2024/04/02 20:53:59 +0900>
 //
 // Update objs and draw objs by OpenGL
 
@@ -1107,7 +1107,9 @@ void update(float delta)
     switch (gw.step)
     {
     case 0:
-        gw.step++;
+        gw.counter++;
+        if (gw.counter >= (gw.cfg_framerate))
+            gw.step++;
         return;
     case 1:
     case 2:
@@ -1125,7 +1127,7 @@ void update(float delta)
         return;
     case 7:
         gw.counter++;
-        if (gw.counter >= (int)(gw.framerate * 0.5))
+        if (gw.counter >= (int)(gw.cfg_framerate * 0.5))
         {
             gw.step++;
         }
@@ -1360,9 +1362,6 @@ void init_gl(void)
 
     glClearDepth(1.0);
 
-    glClearColor(0.2, 0.4, 0.8, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     chkErrGL();
 }
 
@@ -1374,7 +1373,7 @@ void clear_screen(void)
 }
 
 static const char *loadmsg[8] = {
-    "Now Loading ",
+    "Initialize start",
     "Now Loading .",
     "Now Loading ..",
     "Now Loading ...",
@@ -1860,37 +1859,39 @@ void draw_billboard(int spkind, float spx, float spscale, float cx0, float y0, f
  */
 GLuint createTextureFromMemory(const unsigned char *_pngData, int _pngLen)
 {
-    GLuint texture;
+    GLuint tex;
     int width = 0, height = 0, bpp = 0;
     unsigned char *data = NULL;
 
+    glEnable(GL_TEXTURE_2D);
+
+    // set texture repeat
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filter
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+
+    // load image from memory
     data = stbi_load_from_memory(_pngData, _pngLen, &width, &height, &bpp, 4);
     if (data == NULL)
         return 0;
 
-    // create OpenGL texture
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-    // set texture repeat
-    // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    // set texture filter
-    // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
 
     // Release allocated all memory
     stbi_image_free(data);
 
-    return texture;
+    return tex;
 }
 
 #ifdef __MINGW64__
@@ -1942,12 +1943,7 @@ void load_image(int kind)
 #endif
 
         gw.spr_tex = createTextureFromMemory(img_ptr, img_size);
-        if (gw.spr_tex > 0)
-        {
-            glEnable(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, gw.spr_tex);
-        }
-        else
+        if (gw.spr_tex <= 0)
             gw.tex_load_error |= (1 << 4);
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1961,12 +1957,7 @@ void load_image(int kind)
             img_ptr = bgimg_start_tbl[i];
             img_size = bgimg_size_tbl[i];
             gw.bg_tex[i] = createTextureFromMemory(img_ptr, img_size);
-            if (gw.bg_tex[i] > 0)
-            {
-                glEnable(GL_TEXTURE_2D);
-                glBindTexture(GL_TEXTURE_2D, gw.bg_tex[i]);
-            }
-            else
+            if (gw.bg_tex[i] <= 0)
                 gw.tex_load_error |= (1 << i);
         }
         else
