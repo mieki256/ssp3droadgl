@@ -80,9 +80,10 @@ make clean
 make
 ```
 
-### Build ssp3droadglfw.exe
+### Build ssp3droadglfw.exe 
 
-* Windows10 x64 22H2
+#### Windows10 x64 22H2
+
 * MSYS2 (g++ 13.2.0)
 * ld 2.42
 * GLFW 3.4 (mingw-w64-i686-glfw or mingw-w64-x86_64-glfw)
@@ -93,6 +94,19 @@ make -f Makefile.glfw clean
 make -f Makefile.glfw
 ```
 
+#### Ubuntu Linux 22.04 LTS / 20.04 LTS
+
+* g++ 11.4.0 / g++ 9.4.0
+* ld 2.38 / 2.34
+* libglfw3-dev 3.3.6-1 / 3.3.2-1
+ 
+```
+cd src
+make -f Makefile.glfw clean
+make -f Makefile.glfw
+./ssp3droadglfw
+```
+
 Author
 ------
 
@@ -101,7 +115,7 @@ Author
 License
 -------
 
-mieki256が書いた部分は CC0 / Public Domain 扱いということで…。
+mieki256が書いた部分(render.cpp、sprites.png)は、CC0 / Public Domain 扱いということで…。
 
 Reference
 ---------

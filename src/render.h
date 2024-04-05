@@ -1,4 +1,4 @@
-// Last updated: <2024/04/01 00:33:05 +0900>
+// Last updated: <2024/04/04 10:22:12 +0900>
 
 #ifndef __RENDER_H__
 #define __RENDER_H__
@@ -8,12 +8,18 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <wchar.h>
+
+#ifdef _WIN32
+// Windows
 #include <tchar.h>
 #include <windows.h>
 #include <scrnsave.h>
+#include <mmsystem.h>
+#endif
+
+// Windows and Linux
 #include <math.h>
 #include <time.h>
-#include <mmsystem.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "resource.h"

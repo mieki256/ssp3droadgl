@@ -1,4 +1,4 @@
-// Last updated: <2024/04/02 20:53:59 +0900>
+// Last updated: <2024/04/05 05:49:25 +0900>
 //
 // Update objs and draw objs by OpenGL
 
@@ -13,7 +13,6 @@
 #include "glbitmfont.h"
 
 #include "settings.h"
-#include "render.h"
 
 // #if 0
 #ifdef _WIN32
@@ -50,40 +49,40 @@ int Width, Height;
 
 // ----------------------------------------
 // texture image binary data
-#ifdef __MINGW64__
-// MSYS2 MINGW64 gcc
-extern const unsigned char _binary_sprites_png_start[]; // binary start address
-extern const unsigned char _binary_sprites_png_end[];   // binary end address
-extern const unsigned char _binary_sprites_png_size[];  // binary size
-extern const unsigned char _binary_bg_summer_jpg_start[];
-extern const unsigned char _binary_bg_summer_jpg_end[];
-extern const unsigned char _binary_bg_summer_jpg_size[];
-extern const unsigned char _binary_bg_autumn_jpg_start[];
-extern const unsigned char _binary_bg_autumn_jpg_end[];
-extern const unsigned char _binary_bg_autumn_jpg_size[];
-extern const unsigned char _binary_bg_winter_jpg_start[];
-extern const unsigned char _binary_bg_winter_jpg_end[];
-extern const unsigned char _binary_bg_winter_jpg_size[];
-extern const unsigned char _binary_bg_night_jpg_start[];
-extern const unsigned char _binary_bg_night_jpg_end[];
-extern const unsigned char _binary_bg_night_jpg_size[];
+#if defined(__MINGW64__) || defined(__linux__)
+// MSYS2 MINGW64 gcc or Linux
+extern unsigned char _binary_sprites_png_start; // binary start address
+extern unsigned char _binary_sprites_png_end;   // binary end address
+extern unsigned char _binary_sprites_png_size;  // binary size
+extern unsigned char _binary_bg_summer_jpg_start;
+extern unsigned char _binary_bg_summer_jpg_end;
+extern unsigned char _binary_bg_summer_jpg_size;
+extern unsigned char _binary_bg_autumn_jpg_start;
+extern unsigned char _binary_bg_autumn_jpg_end;
+extern unsigned char _binary_bg_autumn_jpg_size;
+extern unsigned char _binary_bg_winter_jpg_start;
+extern unsigned char _binary_bg_winter_jpg_end;
+extern unsigned char _binary_bg_winter_jpg_size;
+extern unsigned char _binary_bg_night_jpg_start;
+extern unsigned char _binary_bg_night_jpg_end;
+extern unsigned char _binary_bg_night_jpg_size;
 #else
 // MinGW gcc
-extern const unsigned char binary_sprites_png_start[]; // binary start address
-extern const unsigned char binary_sprites_png_end[];   // binary end address
-extern const unsigned char binary_sprites_png_size[];  // binary size
-extern const unsigned char binary_bg_summer_jpg_start[];
-extern const unsigned char binary_bg_summer_jpg_end[];
-extern const unsigned char binary_bg_summer_jpg_size[];
-extern const unsigned char binary_bg_autumn_jpg_start[];
-extern const unsigned char binary_bg_autumn_jpg_end[];
-extern const unsigned char binary_bg_autumn_jpg_size[];
-extern const unsigned char binary_bg_winter_jpg_start[];
-extern const unsigned char binary_bg_winter_jpg_end[];
-extern const unsigned char binary_bg_winter_jpg_size[];
-extern const unsigned char binary_bg_night_jpg_start[];
-extern const unsigned char binary_bg_night_jpg_end[];
-extern const unsigned char binary_bg_night_jpg_size[];
+extern unsigned char binary_sprites_png_start; // binary start address
+extern unsigned char binary_sprites_png_end;   // binary end address
+extern unsigned char binary_sprites_png_size;  // binary size
+extern unsigned char binary_bg_summer_jpg_start;
+extern unsigned char binary_bg_summer_jpg_end;
+extern unsigned char binary_bg_summer_jpg_size;
+extern unsigned char binary_bg_autumn_jpg_start;
+extern unsigned char binary_bg_autumn_jpg_end;
+extern unsigned char binary_bg_autumn_jpg_size;
+extern unsigned char binary_bg_winter_jpg_start;
+extern unsigned char binary_bg_winter_jpg_end;
+extern unsigned char binary_bg_winter_jpg_size;
+extern unsigned char binary_bg_night_jpg_start;
+extern unsigned char binary_bg_night_jpg_end;
+extern unsigned char binary_bg_night_jpg_size;
 #endif
 
 // ----------------------------------------
@@ -433,7 +432,7 @@ typedef struct gwk
 
     int use_waittime;
     int init_fg;
-    int counter;
+    float wait_time;
 } GWK;
 
 // reserve global work
@@ -565,24 +564,26 @@ void closeCountFps(void)
 
 void waitFrame(void)
 {
-    if (gw.framerate != gw.cfg_framerate)
-    {
-        // sleep
-        float waittm = (gw.prev_time + (1.0 / gw.cfg_framerate)) - get_now_time();
-        if (waittm > 0.0 && waittm < 1.0)
-        {
-#ifdef WINMM_TIMER
-            // Windows
-            waittm *= 1000;
-            Sleep((DWORD)waittm);
-#else
-            // Linux
-            struct timespec ts;
-            ts.tv_sec = 0;
-            ts.tv_nsec = (long)(waittm * 1000000000);
-            nanosleep(&ts, NULL);
+#if 0
+    if (gw.framerate == gw.cfg_framerate)
+        return;
 #endif
-        }
+
+    // sleep
+    float waittm = (gw.prev_time + (1.0 / gw.cfg_framerate)) - get_now_time();
+    if (waittm > 0.0 && waittm < 1.0)
+    {
+#ifdef WINMM_TIMER
+        // Windows
+        waittm *= 1000;
+        Sleep((DWORD)waittm);
+#else
+        // Linux
+        struct timespec ts;
+        ts.tv_sec = 0;
+        ts.tv_nsec = (long)(waittm * 1000000000);
+        nanosleep(&ts, NULL);
+#endif
     }
 }
 
@@ -663,6 +664,7 @@ void init_work_first(int Width, int Height)
 
     gw.step = 0;
     gw.init_fg = 0;
+    gw.wait_time = 0.0;
 }
 
 void init_work(void)
@@ -1107,8 +1109,8 @@ void update(float delta)
     switch (gw.step)
     {
     case 0:
-        gw.counter++;
-        if (gw.counter >= (gw.cfg_framerate))
+        gw.wait_time += delta;
+        if (gw.wait_time >= 0.5)
             gw.step++;
         return;
     case 1:
@@ -1122,15 +1124,13 @@ void update(float delta)
         return;
     case 6:
         gw.init_fg = 1;
-        gw.counter = 0;
+        gw.wait_time = 0.0;
         gw.step++;
         return;
     case 7:
-        gw.counter++;
-        if (gw.counter >= (int)(gw.cfg_framerate * 0.5))
-        {
+        gw.wait_time += delta;
+        if (gw.wait_time >= 0.5)
             gw.step++;
-        }
         return;
     case 8:
         init_work();
@@ -1486,14 +1486,12 @@ void draw_error_msg(void)
 
     for (int i = 0; i < 5; i++)
     {
-        if ((gw.tex_load_error & (1 << i)) == 0)
-            continue;
-
-        draw_text(err_msg_tbl[i], x, y, sdw, GL_FONT_PROFONT);
-        y -= 0.5;
+        if ((gw.tex_load_error & (1 << i)) != 0)
+        {
+            draw_text(err_msg_tbl[i], x, y, sdw, GL_FONT_PROFONT);
+            y -= 0.7;
+        }
     }
-
-    draw_text("Not enough VRAM", x, y, sdw, GL_FONT_PROFONT);
 }
 
 static float bgcolor[4][4] = {
@@ -1853,17 +1851,26 @@ void draw_billboard(int spkind, float spx, float spscale, float cx0, float y0, f
 /**
  * Load texture from png image on memory
  *
- * @param[in] _pngData png binary on memory
- * @param[in] _pngDataLen png binary size
+ * @param[in] pngData  png binary on memory
+ * @param[in] pngLen   png binary size
  * return GLuint OpenGL texture ID. if 0, process fails
  */
-GLuint createTextureFromMemory(const unsigned char *_pngData, int _pngLen)
+GLuint createTextureFromMemory(const unsigned char *pngData, int pngLen)
 {
-    GLuint tex;
-    int width = 0, height = 0, bpp = 0;
+    GLuint tex = 0;
+    int width = 0;
+    int height = 0;
+    int bpp = 0;
     unsigned char *data = NULL;
 
-    glEnable(GL_TEXTURE_2D);
+    // load image from memory
+    data = stbi_load_from_memory(pngData, pngLen, &width, &height, &bpp, 4);
+    if (data == NULL)
+        return 0;
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     // set texture repeat
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -1878,14 +1885,6 @@ GLuint createTextureFromMemory(const unsigned char *_pngData, int _pngLen)
     // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
     // glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
 
-    // load image from memory
-    data = stbi_load_from_memory(_pngData, _pngLen, &width, &height, &bpp, 4);
-    if (data == NULL)
-        return 0;
-
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
     // Release allocated all memory
@@ -1894,52 +1893,23 @@ GLuint createTextureFromMemory(const unsigned char *_pngData, int _pngLen)
     return tex;
 }
 
-#ifdef __MINGW64__
-// MSYS2 MINGW64 gcc
-static const unsigned char *bgimg_start_tbl[4] = {
-    _binary_bg_summer_jpg_start,
-    _binary_bg_autumn_jpg_start,
-    _binary_bg_winter_jpg_start,
-    _binary_bg_night_jpg_start,
-};
-
-static size_t bgimg_size_tbl[4] = {
-    (size_t)_binary_bg_summer_jpg_size,
-    (size_t)_binary_bg_autumn_jpg_size,
-    (size_t)_binary_bg_winter_jpg_size,
-    (size_t)_binary_bg_night_jpg_size,
-};
-#else
-// MinGW gcc
-static const unsigned char *bgimg_start_tbl[4] = {
-    binary_bg_summer_jpg_start,
-    binary_bg_autumn_jpg_start,
-    binary_bg_winter_jpg_start,
-    binary_bg_night_jpg_start,
-};
-
-static size_t bgimg_size_tbl[4] = {
-    (size_t)binary_bg_summer_jpg_size,
-    (size_t)binary_bg_autumn_jpg_size,
-    (size_t)binary_bg_winter_jpg_size,
-    (size_t)binary_bg_night_jpg_size,
-};
-#endif
-
 void load_image(int kind)
 {
-    const unsigned char *img_ptr;
+    unsigned char *img_ptr;
     size_t img_size;
 
     if (kind == 0)
     {
-
-#ifdef __MINGW64__
-        img_ptr = _binary_sprites_png_start;         // start address
-        img_size = (size_t)_binary_sprites_png_size; // size
+#if defined(__MINGW64__) || defined(__linux__)
+        // MSYS2 MINGW64 gcc or Linux
+        img_ptr = &_binary_sprites_png_start; // start address
+        // img_size = (size_t)&_binary_sprites_png_size; // size
+        img_size = (size_t)((&_binary_sprites_png_end) - (&_binary_sprites_png_start));
 #else
-        img_ptr = binary_sprites_png_start;         // start address
-        img_size = (size_t)binary_sprites_png_size; // size
+        // MinGW gcc
+        img_ptr = &binary_sprites_png_start; // start address
+        // img_size = (size_t)&binary_sprites_png_size; // size
+        img_size = (size_t)((&binary_sprites_png_end) - (&binary_sprites_png_start));
 #endif
 
         gw.spr_tex = createTextureFromMemory(img_ptr, img_size);
@@ -1951,11 +1921,44 @@ void load_image(int kind)
     }
     else if (kind <= 4)
     {
+#if defined(__MINGW64__) || defined(__linux__)
+        // MSYS2 MINGW64 gcc or Linux
+        static unsigned char *bgimg_tbl[4][2] = {
+            {&_binary_bg_summer_jpg_start, &_binary_bg_summer_jpg_end},
+            {&_binary_bg_autumn_jpg_start, &_binary_bg_autumn_jpg_end},
+            {&_binary_bg_winter_jpg_start, &_binary_bg_winter_jpg_end},
+            {&_binary_bg_night_jpg_start, &_binary_bg_night_jpg_end},
+        };
+
+        // static size_t bgimg_size_tbl[4] = {
+        //     (size_t)&_binary_bg_summer_jpg_size,
+        //     (size_t)&_binary_bg_autumn_jpg_size,
+        //     (size_t)&_binary_bg_winter_jpg_size,
+        //     (size_t)&_binary_bg_night_jpg_size,
+        // };
+#else
+        // MinGW gcc
+        static unsigned char *bgimg_tbl[4][2] = {
+            {&binary_bg_summer_jpg_start, &binary_bg_summer_jpg_end},
+            {&binary_bg_autumn_jpg_start, &binary_bg_autumn_jpg_end},
+            {&binary_bg_winter_jpg_start, &binary_bg_winter_jpg_end},
+            {&binary_bg_night_jpg_start, &binary_bg_night_jpg_end},
+        };
+
+        // static size_t bgimg_size_tbl[4] = {
+        //     (size_t)&binary_bg_summer_jpg_size,
+        //     (size_t)&binary_bg_autumn_jpg_size,
+        //     (size_t)&binary_bg_winter_jpg_size,
+        //     (size_t)&binary_bg_night_jpg_size,
+        // };
+#endif
+
         int i = kind - 1;
         if (enableDrawBg != 0)
         {
-            img_ptr = bgimg_start_tbl[i];
-            img_size = bgimg_size_tbl[i];
+            img_ptr = bgimg_tbl[i][0];
+            // img_size = bgimg_size_tbl[i];
+            img_size = (size_t)(bgimg_tbl[i][1] - bgimg_tbl[i][0]);
             gw.bg_tex[i] = createTextureFromMemory(img_ptr, img_size);
             if (gw.bg_tex[i] <= 0)
                 gw.tex_load_error |= (1 << i);
@@ -1997,7 +2000,9 @@ void chkErrGL(void)
         {
             if (err == errtbl[i].code)
             {
+#ifdef _WIN32
                 MessageBoxA(NULL, errtbl[i].msg, "OpenGL Error", MB_OK);
+#endif
                 fg = 1;
                 break;
             }
@@ -2007,7 +2012,9 @@ void chkErrGL(void)
         {
             char buf[512];
             sprintf(buf, "%d", err);
+#ifdef _WIN32
             MessageBoxA(NULL, buf, "OpenGL Error", MB_OK);
+#endif
         }
     }
 }

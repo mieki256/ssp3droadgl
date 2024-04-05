@@ -39,3 +39,6 @@ BEGIN
   AUTOCHECKBOX "GL Err chk",  IDC_GLERRCHK,   80, 70, 60, 14
   PUSHBUTTON    "Reset",   IDC_RESET, 10,  90, 50, 14
 END
+
+1 24 "ssp3droadgl.scr.manifest"
+
