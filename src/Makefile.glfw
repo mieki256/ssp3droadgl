@@ -17,7 +17,7 @@ TARGET = ssp3droadglfw
 LIBS = -lGL -lGLU -lglfw -lm
 endif
 
-IMAGES = sprites.o bg_summer.o bg_autumn.o bg_winter.o bg_night.o
+IMAGES = sprites.o sprites_1024.o bg_summer.o bg_autumn.o bg_winter.o bg_night.o
 OBJS = ssp3droadglfw.o render.o $(IMAGES)
 
 all: $(TARGET)

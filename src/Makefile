@@ -1,6 +1,6 @@
 # use MinGW (gcc 6.3.0)
 
-IMAGES = sprites.o bg_summer.o bg_autumn.o bg_winter.o bg_night.o
+IMAGES = sprites.o sprites_1024.o bg_summer.o bg_autumn.o bg_winter.o bg_night.o
 OBJS = ssp3droadgl.o render.o settings.o resource.o $(IMAGES)
 
 all: ssp3droadgl.scr

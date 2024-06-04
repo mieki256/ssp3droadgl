@@ -1,4 +1,4 @@
-// Last updated: <2024/04/05 05:49:25 +0900>
+// Last updated: <2024/06/05 01:53:19 +0900>
 //
 // Update objs and draw objs by OpenGL
 
@@ -47,6 +47,8 @@ int Width, Height;
 
 #define deg2rad(x) ((x) * M_PI / 180.0)
 
+#define FORCE_SMALL_TEX 0
+
 // ----------------------------------------
 // texture image binary data
 #if defined(__MINGW64__) || defined(__linux__)
@@ -54,6 +56,9 @@ int Width, Height;
 extern unsigned char _binary_sprites_png_start; // binary start address
 extern unsigned char _binary_sprites_png_end;   // binary end address
 extern unsigned char _binary_sprites_png_size;  // binary size
+extern unsigned char _binary_sprites_1024_png_start;
+extern unsigned char _binary_sprites_1024_png_end;
+extern unsigned char _binary_sprites_1024_png_size;
 extern unsigned char _binary_bg_summer_jpg_start;
 extern unsigned char _binary_bg_summer_jpg_end;
 extern unsigned char _binary_bg_summer_jpg_size;
@@ -71,6 +76,9 @@ extern unsigned char _binary_bg_night_jpg_size;
 extern unsigned char binary_sprites_png_start; // binary start address
 extern unsigned char binary_sprites_png_end;   // binary end address
 extern unsigned char binary_sprites_png_size;  // binary size
+extern unsigned char binary_sprites_1024_png_start;
+extern unsigned char binary_sprites_1024_png_end;
+extern unsigned char binary_sprites_1024_png_size;
 extern unsigned char binary_bg_summer_jpg_start;
 extern unsigned char binary_bg_summer_jpg_end;
 extern unsigned char binary_bg_summer_jpg_size;
@@ -1900,17 +1908,40 @@ void load_image(int kind)
 
     if (kind == 0)
     {
+        // get max texture size
+        GLint maxTextureSize;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+
+        if (maxTextureSize < 4096 || FORCE_SMALL_TEX)
+        {
+            // texture size 1024 x1024
 #if defined(__MINGW64__) || defined(__linux__)
-        // MSYS2 MINGW64 gcc or Linux
-        img_ptr = &_binary_sprites_png_start; // start address
-        // img_size = (size_t)&_binary_sprites_png_size; // size
-        img_size = (size_t)((&_binary_sprites_png_end) - (&_binary_sprites_png_start));
+            // MSYS2 MINGW64 gcc or Linux
+            img_ptr = &_binary_sprites_1024_png_start; // start address
+            // img_size = (size_t)&_binary_sprites_png_size; // size
+            img_size = (size_t)((&_binary_sprites_1024_png_end) - (&_binary_sprites_1024_png_start));
 #else
-        // MinGW gcc
-        img_ptr = &binary_sprites_png_start; // start address
-        // img_size = (size_t)&binary_sprites_png_size; // size
-        img_size = (size_t)((&binary_sprites_png_end) - (&binary_sprites_png_start));
+            // MinGW gcc
+            img_ptr = &binary_sprites_1024_png_start; // start address
+            // img_size = (size_t)&binary_sprites_png_size; // size
+            img_size = (size_t)((&binary_sprites_1024_png_end) - (&binary_sprites_1024_png_start));
 #endif
+        }
+        else
+        {
+            // texture size 4096 x 4096
+#if defined(__MINGW64__) || defined(__linux__)
+            // MSYS2 MINGW64 gcc or Linux
+            img_ptr = &_binary_sprites_png_start; // start address
+            // img_size = (size_t)&_binary_sprites_png_size; // size
+            img_size = (size_t)((&_binary_sprites_png_end) - (&_binary_sprites_png_start));
+#else
+            // MinGW gcc
+            img_ptr = &binary_sprites_png_start; // start address
+            // img_size = (size_t)&binary_sprites_png_size; // size
+            img_size = (size_t)((&binary_sprites_png_end) - (&binary_sprites_png_start));
+#endif
+        }
 
         gw.spr_tex = createTextureFromMemory(img_ptr, img_size);
         if (gw.spr_tex <= 0)

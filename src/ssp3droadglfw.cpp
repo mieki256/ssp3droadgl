@@ -1,9 +1,10 @@
-// Last updated: <2024/04/04 10:17:09 +0900>
+// Last updated: <2024/06/05 01:59:00 +0900>
 //
 // Draw pseudo 3d road by OpenGL + glfw
 //
 // 1, 2, 3, 4 key : Draw on/off tree, sloop, BG, beam
 // F key : Change framerate 60, 30, 20 FPS
+// T key : Display on/off FPS
 //
 // Use Windows10 x64 22H2 + MinGW (gcc 6.3.0) + glfw3
 // by mieki256
@@ -176,6 +177,10 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
         else if (key == GLFW_KEY_4)
         {
             enableDrawBeam = (enableDrawBeam + 1) % 2;
+        }
+        else if (key == GLFW_KEY_T)
+        {
+            fps_display = !fps_display;
         }
         else if (key == GLFW_KEY_F)
         {
